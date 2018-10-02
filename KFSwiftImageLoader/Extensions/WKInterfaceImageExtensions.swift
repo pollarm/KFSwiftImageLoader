@@ -87,7 +87,7 @@ public extension WKInterfaceImage {
         let sharedURLCache = URLCache.shared
         
         // If there's already a cached image, load it into the interface.
-        if let image = cacheManager[urlAbsoluteString], let imageData = UIImagePNGRepresentation(image) {
+        if let image = cacheManager[urlAbsoluteString], let imageData = image.pngData() {
             self.setImageData(imageData)
             
             self.completion?(true, nil)
