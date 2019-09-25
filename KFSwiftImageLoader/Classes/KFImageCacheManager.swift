@@ -41,11 +41,11 @@ final public class KFImageCacheManager {
     
     /**
         Sets the maximum time (in seconds) that the disk cache will use to maintain a cached response.
-        The default value is 604800 seconds (1 week).
+        The default value is 60 * 60 * 24 * 21 seconds (3 week).
         
         - returns: An unsigned integer value representing time in seconds.
     */
-    public var diskCacheMaxAge = 60 * 60 * 24 * 7 as UInt {
+    public var diskCacheMaxAge = 60 * 60 * 24 * 21 as UInt {
         willSet {
             if newValue == 0 {
                 URLCache.shared.removeAllCachedResponses()
@@ -82,15 +82,15 @@ final public class KFImageCacheManager {
     }
     
     fileprivate init() {
-        // Initialize the disk cache capacity to 50 MB.
-        let diskURLCache = URLCache(memoryCapacity: 0, diskCapacity: 50 * 1024 * 1024, diskPath: nil)
+        // Initialize the disk cache capacity to 250 MB.
+        let diskURLCache = URLCache(memoryCapacity: 0, diskCapacity: 250 * 1024 * 1024, diskPath: nil)
         URLCache.shared = diskURLCache
         
-        NotificationCenter.default.addObserver(forName: .UIApplicationDidReceiveMemoryWarning, object: nil, queue: .main) {
-            _ in
-            
-            self.imageCache.removeAll(keepingCapacity: false)
-        }
+//        NotificationCenter.default.addObserver(forName: .UIApplicationDidReceiveMemoryWarning, object: nil, queue: .main) {
+//            _ in
+//            
+//            self.imageCache.removeAll(keepingCapacity: false)
+//        }
     }
     
     deinit {
@@ -111,12 +111,6 @@ final public class KFImageCacheManager {
                 if let observerMapping = imageCacheEntry[ImageCacheKeys.observerMapping] as? [NSObject: Int] {
                     for (observer, initialIndexIdentifier) in observerMapping {
                         switch observer {
-                        case let imageView as UIImageView:
-                            loadObserver(imageView, image: image, initialIndexIdentifier: initialIndexIdentifier)
-                        case let button as UIButton:
-                            loadObserver(button, image: image, initialIndexIdentifier: initialIndexIdentifier)
-                        case let annotationView as MKAnnotationView:
-                            loadObserver(annotationView, image: image)
                         case let interfaceImage as WKInterfaceImage:
                             loadObserver(interfaceImage, image: image, key: key)
                         default:
@@ -177,71 +171,11 @@ final public class KFImageCacheManager {
         }
     }
     
-    // MARK: - Observer Methods
-    internal func loadObserver(_ imageView: UIImageView, image: UIImage, initialIndexIdentifier: Int) {
-        if initialIndexIdentifier == imageView.indexPathIdentifier {
-            DispatchQueue.main.async {
-                UIView.transition(with: imageView,
-                              duration: self.fadeAnimationDuration,
-                               options: .transitionCrossDissolve,
-                            animations: {
-                    imageView.image = image
-                })
-                
-                imageView.completionHolder.completion?(true, nil)
-            }
-        }
-        else {
-            imageView.completionHolder.completion?(false, nil)
-        }
-    }
-    
-    internal func loadObserver(_ button: UIButton, image: UIImage, initialIndexIdentifier: Int) {
-        if initialIndexIdentifier == button.indexPathIdentifier {
-            DispatchQueue.main.async {
-                UIView.transition(with: button,
-                              duration: self.fadeAnimationDuration,
-                               options: .transitionCrossDissolve,
-                            animations: {
-                    if button.isBackgroundImage == true {
-                        button.setBackgroundImage(image, for: button.controlStateHolder.controlState)
-                    }
-                    else {
-                        button.setImage(image, for: button.controlStateHolder.controlState)
-                    }
-                })
-                
-                button.completionHolder.completion?(true, nil)
-            }
-        }
-        else {
-            button.completionHolder.completion?(false, nil)
-        }
-    }
-    
-    internal func loadObserver(_ annotationView: MKAnnotationView, image: UIImage) {
-        DispatchQueue.main.async {
-            UIView.transition(with: annotationView,
-                          duration: self.fadeAnimationDuration,
-                           options: .transitionCrossDissolve,
-                        animations: {
-                annotationView.image = image
-            })
-            
-            annotationView.completionHolder.completion?(true, nil)
-        }
-    }
-    
     internal func loadObserver(_ interfaceImage: WKInterfaceImage, image: UIImage, key: String) {
         DispatchQueue.main.async {
-            // If there's already a cached image on the Apple Watch, simply set the image directly.
-            if WKInterfaceDevice.current().cachedImages[key] != nil {
-                interfaceImage.setImageNamed(key)
-            }
-            else {
-                interfaceImage.setImageData(UIImagePNGRepresentation(image))
-            }
-            
+
+            interfaceImage.setImageData(image.pngData())
+
             interfaceImage.completionHolder.completion?(true, nil)
         }
     }

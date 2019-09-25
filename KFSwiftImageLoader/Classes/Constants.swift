@@ -13,12 +13,3 @@ final internal class CompletionHolder {
         self.completion = completion
     }
 }
-
-// MARK: - ControlStateHolder Class
-final internal class ControlStateHolder {
-    var controlState: UIControlState
-    
-    init(state: UIControlState) {
-        self.controlState = state
-    }
-}
